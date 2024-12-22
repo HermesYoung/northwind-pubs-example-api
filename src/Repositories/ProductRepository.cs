@@ -1,5 +1,7 @@
-﻿using Common.ResultPattern;
+﻿using System.Runtime.CompilerServices;
+using Common.ResultPattern;
 using DatabaseContext.Context;
+using DatabaseContext.Entities;
 using Microsoft.EntityFrameworkCore;
 using Repositories.Abstract;
 using Repositories.Models.Product;
@@ -37,7 +39,7 @@ internal class ProductRepository(NorthwindPubsDbContext context) : IProductRepos
 
     public async Task<Result<ProductDetail>> GetProductById(string id)
     {
-        var result =  await context.Titleauthors
+        var result = await context.Titleauthors
             .Include(x => x.Title)
             .ThenInclude(x => x.Pub)
             .Include(x => x.Au)
@@ -63,5 +65,73 @@ internal class ProductRepository(NorthwindPubsDbContext context) : IProductRepos
             Notes = result.Title.Notes,
             Author = $"{result.Au.AuFname} {result.Au.AuLname}",
         });
+    }
+
+    public async Task<Result> AddProductAsync(ProductContent content)
+    {
+        var dateTime = DateTime.Now;
+        var publisher = await context.Publishers.FindAsync(content.PublisherId);
+        if (publisher == null)
+        {
+            return Result.Failure(new DefaultErrorMessage(401, "Invalid publisher"));
+        }
+
+        await context.Titles.AddAsync(new Title
+        {
+            TitleId = content.Id,
+            Title1 = content.Title,
+            Type = content.Type,
+            Price = content.Price,
+            Advance = content.Advance,
+            Royalty = content.Royalty,
+            YtdSales = 0,
+            Notes = content.Notes,
+            Pubdate = dateTime,
+        });
+
+        if (content.AuthorIds is not null)
+        {
+            var authors = await context.Authors.AsQueryable().Where(x => content.AuthorIds.Contains(x.AuId))
+                .ToListAsync();
+
+            await context.Titleauthors.AddRangeAsync(authors.Select(x => new Titleauthor()
+            {
+                AuId = x.AuId,
+                TitleId = content.Id,
+            }));
+        }
+        
+        await context.SaveChangesAsync();
+        return Result.Success();
+    }
+
+    public async Task<Result> UpdateProductAsync(string id ,ProductUpdatableContent content)
+    {
+        var title = await context.Titles.FindAsync(id);
+        if (title == null)
+        {
+            return Result.Failure(new DefaultErrorMessage(404, "Title not found"));
+        }
+        
+        title.Title1 = content.Title;
+        title.Type = content.Type;
+        title.Price = content.Price;
+        title.Notes = content.Notes;
+        
+        context.Titles.Update(title);
+        await context.SaveChangesAsync();
+        return Result.Success();
+    }
+
+    public async Task<Result> DeleteProductAsync(string id)
+    {
+        var title = await context.Titles.FindAsync(id);
+        if (title == null)
+        {
+            return Result.Failure(new DefaultErrorMessage(404, "Title not found"));
+        }
+        context.Titles.Remove(title);
+        await context.SaveChangesAsync();
+        return Result.Success();
     }
 }
