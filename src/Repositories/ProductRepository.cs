@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Common.ResultPattern;
+﻿using Common.ResultPattern;
 using DatabaseContext.Context;
 using DatabaseContext.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -72,10 +71,16 @@ internal class ProductRepository(NorthwindPubsDbContext context) : IProductRepos
     public async Task<Result> AddProductAsync(ProductContent content)
     {
         var dateTime = DateTime.Now;
+        var title = await context.Titles.FindAsync(content.Id);
+        if (title != null)
+        {
+            return Result.Failure(new DefaultErrorMessage(400, "Title already exists"));
+        }
+        
         var publisher = await context.Publishers.FindAsync(content.PublisherId);
         if (publisher == null)
         {
-            return Result.Failure(new DefaultErrorMessage(401, "Invalid publisher"));
+            return Result.Failure(new DefaultErrorMessage(400, "Invalid publisher"));
         }
 
         await context.Titles.AddAsync(new Title
@@ -89,10 +94,17 @@ internal class ProductRepository(NorthwindPubsDbContext context) : IProductRepos
             YtdSales = 0,
             Notes = content.Notes,
             Pubdate = dateTime,
+            Pub = publisher
         });
 
         if (!string.IsNullOrEmpty(content.AuthorId))
         {
+            var author = await context.Authors.FindAsync(content.AuthorId);
+            if (author == null)
+            {
+                return Result.Failure(new DefaultErrorMessage(400, "Invalid author"));
+            }
+            
             await context.Titleauthors.AddAsync(new Titleauthor()
             {
                 TitleId = content.Id,
