@@ -38,7 +38,7 @@ internal class ProductRepository(NorthwindPubsDbContext context) : IProductRepos
         });
     }
 
-    public async Task<Result<ProductDetail>> GetProductById(string id)
+    public async Task<Result<ProductDetail>> GetProductByIdAsync(string id)
     {
         var result = await context.Titleauthors
             .Include(x => x.Title)
