@@ -91,16 +91,13 @@ internal class ProductRepository(NorthwindPubsDbContext context) : IProductRepos
             Pubdate = dateTime,
         });
 
-        if (content.AuthorIds is not null)
+        if (!string.IsNullOrEmpty(content.AuthorId))
         {
-            var authors = await context.Authors.AsQueryable().Where(x => content.AuthorIds.Contains(x.AuId))
-                .ToListAsync();
-
-            await context.Titleauthors.AddRangeAsync(authors.Select(x => new Titleauthor()
+            await context.Titleauthors.AddAsync(new Titleauthor()
             {
-                AuId = x.AuId,
                 TitleId = content.Id,
-            }));
+                AuId = content.AuthorId
+            });
         }
         
         await context.SaveChangesAsync();

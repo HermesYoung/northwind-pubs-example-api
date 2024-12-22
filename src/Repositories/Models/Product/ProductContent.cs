@@ -10,5 +10,5 @@ public class ProductContent
     public int? Royalty { get; set; }
     public string? Notes { get; set; }
     public string? PublisherId { get; set; }
-    public ICollection<string>? AuthorIds { get; set; }
+    public string? AuthorId { get; set; }
 }
