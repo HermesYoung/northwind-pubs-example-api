@@ -1,19 +1,20 @@
 ﻿namespace Common.ResultPattern;
 
-public struct Result
+public readonly struct Result
 {
     public bool IsSuccess { get; }
-    public ErrorMessageBase? Error { get; }
+    public ErrorMessageBase? Error => !IsSuccess ? _error : throw new InvalidOperationException();
+    private readonly ErrorMessageBase? _error;
 
     public Result()
     {
         IsSuccess = true;
     }
 
-    public Result(ErrorMessageBase? error)
+    private Result(ErrorMessageBase? error)
     {
         IsSuccess = false;
-        Error = error;
+        _error = error;
     }
 
     public static Result<TValue> Success<TValue>(TValue value) => new(value);
