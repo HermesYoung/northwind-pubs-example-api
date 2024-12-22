@@ -23,6 +23,7 @@ internal class ProductRepository(NorthwindPubsDbContext context) : IProductRepos
         var products = await baseQuery.ToListAsync();
         return products.Select(x => new ProductInformation
         {
+            Id = x.TitleId,
             Title = x.Title1,
             Type = x.Type,
             Price = x.Price,
@@ -51,6 +52,7 @@ internal class ProductRepository(NorthwindPubsDbContext context) : IProductRepos
 
         return Result.Success(new ProductDetail
         {
+            Id = result.TitleId,
             Title = result.Title.Title1,
             Type = result.Title.Type,
             Price = result.Title.Price,
